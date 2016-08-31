@@ -1,10 +1,10 @@
-import sys
-# import urllib2
 from bs4 import BeautifulSoup
-import re
-from urlparse import urlparse
 from email.utils import parseaddr
+from urlparse import urlparse
+
+import re
 import requests
+import sys
 
 class Email_Finder():
 	def __init__(self, debug = False, find_all_internal_links = False):
@@ -63,14 +63,16 @@ class Email_Finder():
 
 		url = self.build_url(page)
 		self.debug_print("Processing: " + url)
-		# opener = urllib2.build_opener(urllib2.HTTPRedirectHandler)
-  #   	request = opener.open(url)
-  #   	print request.url
+		
 		response =  requests.get(url)
+		
+		# Check that the response is html and that the response_url is still in the domain
+		# The second check is needed if we were redirected out of the domain.
 		if ("text/html" in response.headers["content-type"]) and (re.search(self.domain_regex, response.url)):
 			
-			self.page_soup = BeautifulSoup(response.content, "html.parser")
+			self.current_page_data = BeautifulSoup(response.content, "html.parser")
 			
+			# get all the internal links if this page is the domain or code is finding all internal links
 			if self.find_all_internal_links or is_domain:
 				self.process_links_from_page()
 			
@@ -79,11 +81,17 @@ class Email_Finder():
 	def process_links_from_page(self):
 		""" Search through links on a page to find internal links """
 
+		# Look for absolute internal links using the domain regex
+		for link in self.current_page_data.find_all( href = re.compile(self.domain_regex)):
 
-		for link in self.page_soup.find_all( href = re.compile(self.domain_regex)):
 			self.add_page(link["href"])
-		
-		for link in self.page_soup.find_all("a", href=re.compile("^/")):
+
+
+		# Look for relative links
+		for link in self.current_page_data.find_all("a", href=re.compile("^/")):
+
+			# Check that the / is not a //. This is my first time using regular expressions and I couldn't 
+			# figure out to find one, but not 2 slashes. 
 			if link["href"][0:2] != "//":
 				self.add_page(link["href"])
 		
@@ -98,7 +106,8 @@ class Email_Finder():
 		"""
 
 		# Finds all mailtos: in the href of the page.   	
-		for mailto in self.page_soup.find_all( href = re.compile("^mailto:")):
+		for mailto in self.current_page_data.find_all( href = re.compile("^mailto:")):
+
 			# parse out the address from the mailto and remove any parameters 
 			parsed_address = parseaddr(mailto["href"])[1].split("?")[0]
 			self.add_email(parsed_address)
@@ -108,7 +117,9 @@ class Email_Finder():
 		# The second for loop will find all email addresses within that complete text
 		# For example, "Contact us at abc@def.com or ghi@def.com" would be the re_match
 		# We would then search it find all the email addresses found within
-		for re_match in self.page_soup.find_all( text = re.compile("[^ @\s]+@+[^@\s]+\.[^@\s]+")):
+
+		for re_match in self.current_page_data.find_all( text = re.compile("[^ @\s]+@+[^@\s]+\.[^@\s]+")):
+
 			for email in re.findall("[^ @\s]+@+[^@\s]+\.[^@\s]+", re_match):
 				self.add_email(email)
 
