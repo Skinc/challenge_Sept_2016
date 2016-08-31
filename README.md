@@ -9,6 +9,7 @@ To install the required libraries, run `pip install -r requirements.txt`
 To run the code, run `python find_email_addresses.py jana.com` 
 
 This will run the code, but only searching internal links found from the homepage. To search all internal links throughout the site, run `python find_email_addresses.py jana.com -f`
+
 web.mit.edu has been internal links, for example. Searching through all of them is time-consuming and does not appear to be what your sample data is looking for. jana.com has fewer internal links so it can be run either way. At this point, running this code with -f on web.mit.edu will take a very long time and eventually fail because a link redirects too many times. 
 
 To run the code in debug mode and get some basic debugging notes on what is going on, run `python find_email_addresses.py jana.com -d`
