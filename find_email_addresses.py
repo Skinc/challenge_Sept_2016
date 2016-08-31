@@ -104,7 +104,7 @@ class Email_Finder():
 			While this will often find duplicates, there are cases where addresses aren't written with a mailto
 			or the text says somethig besides the email address ("Email Us" for example).
 		"""
-
+		
 		# Finds all mailtos: in the href of the page.   	
 		for mailto in self.current_page_data.find_all( href = re.compile("^mailto:")):
 
@@ -163,7 +163,21 @@ class Email_Finder():
 
 
 if __name__ == '__main__':
-	domain = sys.argv[1]
-	email_finder = Email_Finder(False)
-	email_finder.process_domain(domain)
-	
+	len_sys_args = len(sys.argv)
+	if not len_sys_args < 2:
+		
+		
+		domain = sys.argv[1]
+		
+		debug = False
+		find_all_internal_links = False
+		if len_sys_args > 2:
+			flags = sys.argv[2]
+			if "d" in flags:
+				debug = True
+			if "f" in flags:
+				find_all_internal_links = True
+		email_finder = Email_Finder(debug = debug, find_all_internal_links = find_all_internal_links)
+		email_finder.process_domain(domain)
+	else:
+		"No domain provided"
